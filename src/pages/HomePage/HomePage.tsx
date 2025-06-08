@@ -3,10 +3,23 @@ import {AppBar, Box, Container, Toolbar, Typography} from '@mui/material'
 import {Masonry} from '@mui/lab'
 import SearchInput from '../../components/SearchInput'
 import PhotoCard from '../../components/PhotoCard'
-
-const mockHights = [150, 30, 90, 70, 110, 150, 130, 80, 50, 90, 100, 150, 30, 50, 80]
+import {useEffect, useState} from 'react'
+import {getPhotos} from '../../apis/photos'
+import type {ImageItem} from '../../apis/photos'
 
 const HomePage = () => {
+  const [photos, setPhotos] = useState<ImageItem[]>([])
+
+  useEffect(() => {
+    // TODO 之後要改成可換頁、搜尋作者
+    getPhotos()
+      .then(list => {
+        setPhotos(list)
+      })
+      .catch(err => {
+        console.error(err)
+      })
+  }, [])
   return (
     <Box sx={{flexGrow: 1, bgcolor: '#f5f5f5', minHeight: '100vh'}}>
       {/* Header */}
@@ -22,8 +35,14 @@ const HomePage = () => {
       {/* Content */}
       <Container maxWidth="xl" sx={{py: 3}}>
         <Masonry columns={{xs: 2, sm: 3, md: 4, lg: 5, xl: 6}} spacing={2}>
-          {mockHights.map((height, index) => (
-            <PhotoCard key={index} height={height} />
+          {photos.map(({height, width, download_url, author}, index) => (
+            <PhotoCard
+              key={index}
+              originalHeight={height}
+              originalWidth={width}
+              imageSrc={download_url}
+              title={author}
+            />
           ))}
         </Masonry>
       </Container>
