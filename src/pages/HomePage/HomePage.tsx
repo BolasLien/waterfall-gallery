@@ -1,31 +1,47 @@
-import {AppBar, Box, Container, Toolbar, Typography} from '@mui/material'
+import { useEffect, useRef } from 'react'
+import { AppBar, Box, CircularProgress, Container, Fade, Toolbar, Typography } from '@mui/material'
+import { Masonry } from '@mui/lab'
 
-import {Masonry} from '@mui/lab'
 import SearchInput from '../../components/SearchInput'
 import PhotoCard from '../../components/PhotoCard'
-import {useEffect, useState} from 'react'
-import {getPhotos} from '../../apis/photos'
-import type {ImageItem} from '../../apis/photos'
+import { usePhotos } from '../../hooks/usePhotos'
 
 const HomePage = () => {
-  const [photos, setPhotos] = useState<ImageItem[]>([])
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError } = usePhotos()
+
+  const loaderRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    // TODO 之後要改成可換頁、搜尋作者
-    getPhotos()
-      .then(list => {
-        setPhotos(list)
-      })
-      .catch(err => {
-        console.error(err)
-      })
-  }, [])
+    if (!hasNextPage || !loaderRef.current) return
+
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasNextPage) {
+        fetchNextPage()
+      }
+    })
+
+    observer.observe(loaderRef.current)
+
+    return () => observer.disconnect()
+  }, [hasNextPage, fetchNextPage])
+
+  if (isLoading) return <p>載入中...</p>
+  if (isError) return <p>圖片載入發生錯誤</p>
+
+  // 把 Photos 的資料攤平
+  const allPhotos = data?.pages.flat() ?? []
+
   return (
-    <Box sx={{flexGrow: 1, bgcolor: '#f5f5f5', minHeight: '100vh'}}>
+    <Box sx={{ flexGrow: 1, bgcolor: '#f5f5f5', minHeight: '100vh' }}>
       {/* Header */}
       <AppBar position="sticky">
         <Toolbar>
-          <Typography variant="h6" noWrap component="div" sx={{display: {xs: 'none', sm: 'block'}}}>
+          <Typography
+            variant="h6"
+            noWrap
+            component="div"
+            sx={{ display: { xs: 'none', sm: 'block' } }}
+          >
             瀑布式相片牆
           </Typography>
           <SearchInput />
@@ -33,9 +49,9 @@ const HomePage = () => {
       </AppBar>
 
       {/* Content */}
-      <Container maxWidth="xl" sx={{py: 3}}>
-        <Masonry columns={{xs: 2, sm: 3, md: 4, lg: 5, xl: 6}} spacing={2}>
-          {photos.map(({height, width, download_url, author}, index) => (
+      <Container maxWidth="xl" sx={{ py: 3 }}>
+        <Masonry columns={{ xs: 2, sm: 3, md: 4, lg: 5, xl: 6 }} spacing={2}>
+          {allPhotos.map(({ height, width, download_url, author }, index) => (
             <PhotoCard
               key={index}
               originalHeight={height}
@@ -45,7 +61,17 @@ const HomePage = () => {
             />
           ))}
         </Masonry>
+
+        {/* 載入更多效果 */}
+        <Fade in={isFetchingNextPage} unmountOnExit>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <CircularProgress />
+          </Box>
+        </Fade>
       </Container>
+
+      {/* 觸發載入更多 */}
+      <div ref={loaderRef} style={{ height: 20 }} />
     </Box>
   )
 }

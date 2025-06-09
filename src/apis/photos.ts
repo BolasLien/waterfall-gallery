@@ -1,4 +1,3 @@
-// src/apis/photos.ts
 import axios from 'axios'
 
 export type ImageItem = {
@@ -10,7 +9,7 @@ export type ImageItem = {
   download_url: string
 }
 
-export async function getPhotos(page = 1, limit = 100): Promise<ImageItem[]> {
+export const getPhotos = async (page = 1, limit = 20): Promise<ImageItem[]> => {
   const res = await axios.get<ImageItem[]>(
     `https://picsum.photos/v2/list?page=${page}&limit=${limit}`
   )
