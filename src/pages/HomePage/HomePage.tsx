@@ -1,35 +1,32 @@
-import { useEffect, useRef } from 'react'
-import { AppBar, Box, CircularProgress, Container, Fade, Toolbar, Typography } from '@mui/material'
-import { Masonry } from '@mui/lab'
+import { Masonry } from 'masonic'
+import { AppBar, Box, Container, Toolbar, Typography } from '@mui/material'
 
-import SearchInput from '../../components/SearchInput'
-import PhotoCard from '../../components/PhotoCard'
 import { usePhotos } from '../../hooks/usePhotos'
+import { useColumnCount } from '../../hooks/useColumnCount'
+import { usePhotoSearch } from '../../hooks/usePhotoSearch'
+
+import PhotoCard from '../../components/PhotoCard'
+import SearchInput from '../../components/SearchInput'
+import SearchNoResultNotice from '../../components/SearchNoResultNotice'
+import InfiniteLoaderTrigger from '../../components/InfiniteLoaderTrigger'
+import LoaderNotice from '../../components/LoaderNotice'
+import BackToTopButton from '../../components/BackToTopButton'
 
 const HomePage = () => {
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError } = usePhotos()
+  const { fetchNextPage, hasNextPage, isLoading, isError, isFetchingNextPage, error } = usePhotos()
 
-  const loaderRef = useRef<HTMLDivElement | null>(null)
+  const { keyword, handleKeywordChange, filteredPhotos } = usePhotoSearch()
 
-  useEffect(() => {
-    if (!hasNextPage || !loaderRef.current) return
+  const columnCount = useColumnCount()
 
-    const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasNextPage) {
-        fetchNextPage()
-      }
-    })
-
-    observer.observe(loaderRef.current)
-
-    return () => observer.disconnect()
-  }, [hasNextPage, fetchNextPage])
-
-  if (isLoading) return <p>載入中...</p>
-  if (isError) return <p>圖片載入發生錯誤</p>
-
-  // 把 Photos 的資料攤平
-  const allPhotos = data?.pages.flat() ?? []
+  // 這些情境不會觸發 載入更多
+  // 1. 沒有下一頁
+  // 2. 正在獲取 api 資料
+  // 3. 正在獲取下一頁資料
+  // 4. 搜尋列有輸入東西
+  // 5. api 發生錯誤
+  const disabledLoadMore =
+    !hasNextPage || isLoading || isFetchingNextPage || keyword.length > 0 || isError
 
   return (
     <Box sx={{ flexGrow: 1, bgcolor: '#f5f5f5', minHeight: '100vh' }}>
@@ -44,34 +41,40 @@ const HomePage = () => {
           >
             瀑布式相片牆
           </Typography>
-          <SearchInput />
+          <SearchInput keyword={keyword} onChange={handleKeywordChange} />
         </Toolbar>
       </AppBar>
 
       {/* Content */}
       <Container maxWidth="xl" sx={{ py: 3 }}>
-        <Masonry columns={{ xs: 2, sm: 3, md: 4, lg: 5, xl: 6 }} spacing={2}>
-          {allPhotos.map(({ height, width, download_url, author }, index) => (
-            <PhotoCard
-              key={index}
-              originalHeight={height}
-              originalWidth={width}
-              imageSrc={download_url}
-              title={author}
+        {/* filteredPhotos 有資料才顯示相片牆，否則顯示無搜尋結果 */}
+        {filteredPhotos.length > 0 ? (
+          <>
+            <Masonry
+              key={`masonry-${keyword}`}
+              itemKey={data => data.id}
+              items={filteredPhotos}
+              columnCount={columnCount}
+              columnGutter={16}
+              overscanBy={6}
+              render={PhotoCard}
             />
-          ))}
-        </Masonry>
-
-        {/* 載入更多效果 */}
-        <Fade in={isFetchingNextPage} unmountOnExit>
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
-          </Box>
-        </Fade>
+            <InfiniteLoaderTrigger disabled={disabledLoadMore} onLoadMore={fetchNextPage}>
+              <LoaderNotice
+                isLoading={isLoading || isFetchingNextPage}
+                onRetry={fetchNextPage}
+                isDone={!hasNextPage}
+                isError={isError}
+                error={error}
+              />
+            </InfiniteLoaderTrigger>
+          </>
+        ) : (
+          <SearchNoResultNotice keyword={keyword} onKeywordChange={handleKeywordChange} />
+        )}
       </Container>
 
-      {/* 觸發載入更多 */}
-      <div ref={loaderRef} style={{ height: 20 }} />
+      <BackToTopButton />
     </Box>
   )
 }
