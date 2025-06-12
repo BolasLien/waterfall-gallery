@@ -72,6 +72,9 @@ const HomePage = () => {
         ) : (
           // 載入頁面、搜尋找不到資料時會顯示
           <SearchNoResultNotice
+            onRetry={fetchNextPage}
+            error={error}
+            isError={isError}
             isLoading={isLoading}
             keyword={keyword}
             onKeywordChange={handleKeywordChange}

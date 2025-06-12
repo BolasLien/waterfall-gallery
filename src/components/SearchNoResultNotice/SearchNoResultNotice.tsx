@@ -1,46 +1,20 @@
 import { Box, Chip, Typography } from '@mui/material'
-import { Search as SearchIcon } from '@mui/icons-material'
-import { Masonry } from 'masonic'
-import { useColumnCount } from '../../hooks/useColumnCount'
-import PhotoCard from '../PhotoCard'
+import {
+  Search as SearchIcon,
+  AddPhotoAlternate as AddPhotoAlternateIcon,
+  Dangerous as DangerousIcon,
+} from '@mui/icons-material'
+import type { JSX } from 'react'
+import { getErrorMessage } from '../../utils/getErrorMessage'
 
-type SearchNoResultNoticeProps = {
-  isLoading: boolean
-  keyword: string
-  onKeywordChange: (keyword: string) => void
+type NoResultProps = {
+  icon: JSX.Element
+  title: string
+  message: string
+  children?: JSX.Element
 }
 
-const SearchNoResultNotice = ({
-  isLoading,
-  keyword,
-  onKeywordChange,
-}: SearchNoResultNoticeProps) => {
-  const columnCount = useColumnCount()
-
-  //  Skeleton Photos
-  const skeletonItems = Array.from({ length: 20 }, (_, i) => ({
-    id: `skeleton-${i}`,
-    width: 300,
-    height: 200,
-    author: '',
-    url: '',
-    download_url: '',
-    showSkeleton: true,
-  }))
-
-  // 頁面載入時還沒有拿到 api 的資料，先用載入效果代替畫面顯示
-  if (isLoading)
-    return (
-      <Masonry
-        key={`masonry-${keyword}`}
-        itemKey={data => data.id}
-        items={skeletonItems}
-        columnCount={columnCount}
-        columnGutter={16}
-        render={PhotoCard}
-      />
-    )
-
+const NoResult = ({ icon, title, message, children }: NoResultProps) => {
   return (
     <Box
       sx={{
@@ -56,14 +30,69 @@ const SearchNoResultNotice = ({
         zIndex: 1,
       }}
     >
-      <SearchIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+      {/* <SearchIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} /> */}
+      {icon}
       <Typography variant="h5" mb={1} color="textPrimary" fontWeight={600}>
-        No photos found
+        {title}
       </Typography>
       <Typography variant="body1" mb={3} px={2} textAlign="center" color="textSecondary">
-        我們找不到 "{keyword}" 的資料。請再試試看搜尋別的作者。
+        {message}
       </Typography>
-      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center', px: 2 }}>
+      {children && (
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center', px: 2 }}>
+          {children}
+        </Box>
+      )}
+    </Box>
+  )
+}
+
+type SearchNoResultNoticeProps = {
+  isError: boolean
+  error: unknown
+  onRetry: () => void
+  isLoading: boolean
+  keyword: string
+  onKeywordChange: (keyword: string) => void
+}
+
+const SearchNoResultNotice = ({
+  isError,
+  error,
+  onRetry,
+  isLoading,
+  keyword,
+  onKeywordChange,
+}: SearchNoResultNoticeProps) => {
+  // 頁面載入時還沒有拿到 api 的資料，先用載入效果代替畫面顯示
+  if (isError) {
+    return (
+      <NoResult
+        icon={<DangerousIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />}
+        title="伺服器打了個噴嚏 🤧"
+        message={getErrorMessage(error)}
+      >
+        <Chip label="重新載入" onClick={onRetry} color="primary" />
+      </NoResult>
+    )
+  }
+
+  if (isLoading)
+    return (
+      <NoResult
+        icon={<AddPhotoAlternateIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />}
+        title="努力搬運中 🏃‍♂️"
+        message="圖片正在排隊進場，請給它們一點時間！"
+      />
+    )
+
+  return (
+    <NoResult
+      icon={<SearchIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />}
+      title="這個作者好像躲起來了？"
+      message={`我們找不到 "${keyword}" 的資料。不然你試試別人看看？`}
+    >
+      <>
         <Chip label="清除重來" onClick={() => onKeywordChange('')} color="primary" />
         <Chip
           label="Alejandro"
@@ -83,8 +112,8 @@ const SearchNoResultNotice = ({
           variant="outlined"
           color="info"
         />
-      </Box>
-    </Box>
+      </>
+    </NoResult>
   )
 }
 
