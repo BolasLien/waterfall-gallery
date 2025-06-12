@@ -9,6 +9,8 @@
 - 可透過作者名稱搜尋篩選圖片
 - 流暢的使用體驗及互動提示
 
+DEMO: [https://bolaslien.github.io/waterfall-gallery/](https://bolaslien.github.io/waterfall-gallery/)
+
 ## 使用的前端技術及套件
 
 - **Vite**：提供快速的開發體驗與模組熱更新。
