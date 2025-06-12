@@ -38,6 +38,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
       width: '20ch',
     },
   },
+  width: '100%',
 }))
 
 type SearchInputProps = {
