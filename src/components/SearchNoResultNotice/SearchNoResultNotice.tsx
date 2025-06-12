@@ -1,12 +1,46 @@
 import { Box, Chip, Typography } from '@mui/material'
 import { Search as SearchIcon } from '@mui/icons-material'
+import { Masonry } from 'masonic'
+import { useColumnCount } from '../../hooks/useColumnCount'
+import PhotoCard from '../PhotoCard'
 
 type SearchNoResultNoticeProps = {
+  isLoading: boolean
   keyword: string
   onKeywordChange: (keyword: string) => void
 }
 
-const SearchNoResultNotice = ({ keyword, onKeywordChange }: SearchNoResultNoticeProps) => {
+const SearchNoResultNotice = ({
+  isLoading,
+  keyword,
+  onKeywordChange,
+}: SearchNoResultNoticeProps) => {
+  const columnCount = useColumnCount()
+
+  //  Skeleton Photos
+  const skeletonItems = Array.from({ length: 20 }, (_, i) => ({
+    id: `skeleton-${i}`,
+    width: 300,
+    height: 200,
+    author: '',
+    url: '',
+    download_url: '',
+    showSkeleton: true,
+  }))
+
+  // 頁面載入時還沒有拿到 api 的資料，先用載入效果代替畫面顯示
+  if (isLoading)
+    return (
+      <Masonry
+        key={`masonry-${keyword}`}
+        itemKey={data => data.id}
+        items={skeletonItems}
+        columnCount={columnCount}
+        columnGutter={16}
+        render={PhotoCard}
+      />
+    )
+
   return (
     <Box
       sx={{

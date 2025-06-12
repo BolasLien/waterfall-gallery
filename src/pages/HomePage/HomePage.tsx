@@ -70,7 +70,12 @@ const HomePage = () => {
             </InfiniteLoaderTrigger>
           </>
         ) : (
-          <SearchNoResultNotice keyword={keyword} onKeywordChange={handleKeywordChange} />
+          // 載入頁面、搜尋找不到資料時會顯示
+          <SearchNoResultNotice
+            isLoading={isLoading}
+            keyword={keyword}
+            onKeywordChange={handleKeywordChange}
+          />
         )}
       </Container>
 
