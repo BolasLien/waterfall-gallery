@@ -1,9 +1,21 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { getPhotos } from '../apis/photos'
 
-const LIMIT = 20
-const START_PAGE = 1
+const LIMIT = 20 // 每頁幾筆
+const START_PAGE = 1 // 起始頁
 
+/**
+ * 自訂 Hook：用於分頁獲取照片資料，並支援無限滾動加載。
+ *
+ * @returns 返回 React Query 的 useInfiniteQuery 結果物件，包含照片資料、分頁狀態與加載方法。
+ *
+ * @example
+ * const { data, fetchNextPage, hasNextPage } = usePhotos();
+ *
+ * @remarks
+ * - 當上一頁資料數量小於預設 LIMIT 時，視為已載入所有資料，不再請求下一頁。
+ * - 不會自動重試失敗的請求（retry: false）。
+ */
 export const usePhotos = () =>
   useInfiniteQuery({
     queryKey: ['photos'],
